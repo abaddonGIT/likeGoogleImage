@@ -8,7 +8,7 @@
  */
 var likegoogle = angular.module("likegoogle", []);
 
-likegoogle.directive("likeGoogle", ["$document", "$window", function ($document, $window) {
+likegoogle.directive("likeGoogle", ["$document", "$window", "$likeGoogle", function ($document, $window, $likeGoogle) {
     return {
         link: function (scope, elem, attr) {
             var settings = {};
@@ -27,8 +27,52 @@ likegoogle.directive("likeGoogle", ["$document", "$window", function ($document,
 
             var rows = [], //строки
                 images = elem[0].querySelectorAll(config.likeClass),
-                ln = images.length;
+                imagesSuccess = [],
+                ln = null;
 
+            //Сheck load images
+            $likeGoogle.imageLoad(images, function (success, errors) {
+                if (errors.length) {//Hide bad images
+                    $likeGoogle.hideBad(errors, elem);
+                }
+                //Good images
+                imagesSuccess = success;
+                ln = imagesSuccess.length;
+
+                var row = {
+                    items: [],
+                    width: 0
+                }, rowWidth = 0, rows = [];
+                //Distribution of images in rows
+                angular.forEach(imagesSuccess, function (image) {
+                    var item = {
+                        oric_width: image.width,
+                        oric_height: image.height
+                    };
+                    item.compress_ratio = config.eligibleHeight / item.oric_height;
+                    item.width = item.oric_width * item.compress_ratio;
+                    item.height = item.oric_height * item.compress_ratio;
+                    rowWidth += item.width;
+                    if (rowWidth > config.blockWidth) {
+                        rows.push(row);
+                        row = {
+                            items: [],
+                            width: 0
+                        };
+                        rowWidth = item.width;
+                    }
+                    row.items.push(item);
+                });
+                //Last image
+                rows.push(row);
+
+                angular.forEach(rows, function (row) {
+                    row.compress_ratio = (config.blockWidth - (row.items.length - 1) * config.margin) / $likeGoogle.getRowWidth(row.items, config);
+
+                });
+            });
+
+            /*
             var getRowWidth = function (items, el) {
                 var width = 0;
                 if (items.length) {
@@ -105,7 +149,75 @@ likegoogle.directive("likeGoogle", ["$document", "$window", function ($document,
                     });
                     correction(row);
                 });
-            };
+            };*/
         }
     };
 } ]);
+
+likegoogle.factory("$likeGoogle", [function () {
+    /*
+    * Return total length of the string
+    * @param {Object} collection
+    * @return lenght of the string
+     */
+
+    var getWidth = function (collection, config) {
+        var width = 0, ln = collection.length;
+        if (ln) {//if an Array
+            width = (ln - 1) * config.margin;//Общая дляна отступов
+            angular.forEach(collection, function (item) {
+               width += item.width;
+            });
+        } else {//if an image item
+            width = collection.width;
+        }
+
+        return width;
+    };
+    /*
+    * Check loading images
+     */
+    var imageLoad = function (images, callback) {
+        var ln = images.length, success = [], errors = [],
+            _load = function (i) {
+            if (!i) {
+                i = 0;
+            }
+            if (i < ln) {
+                var img = new Image();
+                img.onload = function () {
+                    success.push(images[i]);
+                    i++;
+                    _load(i);
+                    img = null;
+                };
+                img.onerror = function () {
+                    errors.push(images[i]);
+                    i++;
+                    _load(i);
+                    img = null;
+                };
+                img.src = images[i].src;
+            } else {
+                callback(success, errors);
+            }
+        };
+        _load();
+    };
+
+    /*
+    * Delete bad images from page
+     */
+    var hideBad = function (images, elem) {
+        angular.forEach(images, function (img) {
+           var parent = img.parentNode;
+            elem[0].removeChild(parent);
+        });
+    };
+
+    return {
+        getRowWidth: getWidth,
+        imageLoad: imageLoad,
+        hideBad: hideBad
+    };
+}]);
