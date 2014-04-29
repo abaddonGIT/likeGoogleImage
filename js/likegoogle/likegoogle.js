@@ -22,7 +22,7 @@ likegoogle.directive("likeGoogle", ["$document", "$window", "$likeGoogle", funct
                 eligibleHeight: 100,
                 margin: 5,
                 likeClass: '.like',
-                effect: 4
+                effect: 2
             }, settings);
 
 
