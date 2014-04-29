@@ -4,6 +4,7 @@ body {
 .images {
     width: 600px;
     margin: 0 auto;
+    overflow: hidden;
 }
 
 .images a {
@@ -11,5 +12,8 @@ body {
     padding: 0;
     display: block;
     font-size: 0;
-    visibility: hidden;
+    opacity: 0;
+    position: relative;
+    top: 0;
+    left: 0;
 }

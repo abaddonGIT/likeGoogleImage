@@ -21,7 +21,8 @@ likegoogle.directive("likeGoogle", ["$document", "$window", "$likeGoogle", funct
                 blockWidth: elem[0].clientWidth,
                 eligibleHeight: 100,
                 margin: 5,
-                likeClass: '.like'
+                likeClass: '.like',
+                effect: 4
             }, settings);
 
 
@@ -43,7 +44,9 @@ likegoogle.directive("likeGoogle", ["$document", "$window", "$likeGoogle", funct
                         el: image,
                         parent: image.parentNode
                     };
-                    item.parent.style.visibility = "hidden";
+                    //item.parent.style.visibility = "hidden";
+                    item.parent.style.cssText += $likeGoogle.getEffect(config, 'start');
+
                     item.compress_ratio = config.eligibleHeight / item.oric_height;
                     item.width = item.oric_width * item.compress_ratio;
                     item.height = item.oric_height * item.compress_ratio;
@@ -158,7 +161,7 @@ likegoogle.factory("$likeGoogle", [function () {
             correction(row, config);
         } else {//Show good rows
             angular.forEach(row.items, function (item) {
-                item.parent.style.visibility = "visible";
+                item.parent.style.cssText += getEffect(config, "end", "opacity");
             });
         }
 
@@ -173,10 +176,60 @@ likegoogle.factory("$likeGoogle", [function () {
         });
     };
 
+    var random = function getRandomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+    /*
+     * Visual effects
+     */
+    var getEffect = function (config, phase, propertyString, time) {
+        propertyString = propertyString || 'all', time = time || 1;
+        var effect = config.effect, res = {},
+            _common = function (propertyString, time) {
+                return "-webkit-transition: " + propertyString + " " + time + "s ease; -moz-transition: " + propertyString + " " + time + "s ease; -o-transition: " + propertyString + " " + time + "s ease; transition: " + " " + propertyString + time + "s ease;";
+            },
+            _transform = function (propertyString) {
+                return "-moz-transform: " + propertyString + "; -ms-transform: " + propertyString + "; -webkit-transform: " + propertyString + "; -o-transform: " + propertyString + "; transform:" + propertyString + ';';
+            },
+            _common_transform = function (time) {
+                return "-webkit-transition: -webkit-transform " + time + "s; -moz-transition: -moz-transform " + time + "s; -o-transition: -o-transform " + time + "s; transition: transform " + time + "s;";
+            };
+
+        switch (effect) {
+            case 1://fade
+                res = {
+                    startStyle: 'opacity: 0;',
+                    endStyle: 'opacity: 1;' + _common(propertyString, time)
+                };
+                break;
+            case 2://random fade time
+                res = {
+                    startStyle: 'opacity: 0;',
+                    endStyle: 'opacity: 1;' + _common(propertyString, random(1, 5))
+                };
+                break;
+            case 3://scale
+                res = {
+                    startStyle: 'opacity: 0;' + _transform('scale(0)'),
+                    endStyle: 'opacity: 1;' + _transform('scale(1)') + _common_transform(random(0.5, 1))
+                };
+                break;
+        }
+
+        if (phase === "start") {
+            return res.startStyle;
+        } else if (phase === "end") {
+            return res.endStyle;
+        } else {
+            return res;
+        }
+    };
+
     return {
         getRowWidth: getWidth,
         imageLoad: imageLoad,
         hideBad: hideBad,
-        correction: correction
+        correction: correction,
+        getEffect: getEffect
     };
 } ]);
