@@ -15,6 +15,8 @@ likegoogle.directive("likeGoogle", ["$document", "$window", "$likeGoogle", "$tim
 
             if (attr.settings) {
                 settings = scope.$eval(attr.settings);
+            } else {
+                settings = {};
             }
 
             var config = angular.extend({
