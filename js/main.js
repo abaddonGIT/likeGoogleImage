@@ -10,13 +10,13 @@ app.controller("baseController", ['$scope','$document', function ($scope, $docum
            src: 'img/004.jpg'
        }
        ,{
-          src: 'img/01.jpg'
+           src: 'img/01.jpg'
        },
        {
            src: 'img/003.jpg'
        }
        ,{
-          src: 'img/02.jpg'
+           src: 'img/02.jpg'
        }
        ,{
            src: 'img/03.jpg'
