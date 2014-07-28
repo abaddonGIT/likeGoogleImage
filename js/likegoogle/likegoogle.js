@@ -35,7 +35,6 @@
                                 el: image,
                                 parent: image.parentNode
                             };
-                            item.aspect = item.oric_width / item.oric_height;
                             item.parent.style.cssText += $likeGoogle.getEffect(config, 'start');
                             item.compress_ratio = config.eligibleHeight / item.oric_height;
                             item.width = item.oric_width * item.compress_ratio;
@@ -71,11 +70,10 @@
                                 } else {
                                     item.parent.style.cssText += 'margin-bottom: ' + config.margin + 'px; margin-left: 0; float: left;';
                                 }
-                                if (!row.last && last && last.aspect >= 1) {
-                                    last.width = last.width + config.blockWidth - $likeGoogle.getRowWidth(row.items, config);
-                                    last.el.width = last.width;
-                                }
                             });
+                            if (!row.last) {
+                                $likeGoogle.correction(row, config);
+                            }
                             an.forEach(row.items, function (item) {
                                 item.parent.style.cssText += $likeGoogle.getEffect(config, "end", "opacity");
                             });
@@ -106,9 +104,24 @@
         };
     }]);
     likegoogle.factory("$likeGoogle", ['$timeout', function ($timeout) {
+        var correction = function (row, config) {
+            var stock = config.blockWidth - getWidth(row.items, config);
+            console.log(getWidth(row.items, config));
+            if (stock > 0) {
+                var ln = row.items.length, step = Math.ceil(stock / ln), j = ln - 1;
+                for (var i = stock; i >= step; i = i - step) {
+                    console.log(row.items[j]);
+                    row.items[j].width += step;
+                    row.items[j]['el'].width = row.items[j].width;
+                    j--;
+                }
+                stock = config.blockWidth - getWidth(row.items, config);
+                row.items[0].width += stock;
+                row.items[0]['el'].width = row.items[0].width;
+            }
+        };
         var getWidth = function (collection, config, item) {
             var width = 0, ln = collection.length;
-
             if (ln) {//if an Array
                 width = (ln - 1) * config.margin; //Общая длина отступов
                 an.forEach(collection, function (it) {
@@ -204,6 +217,7 @@
             getRowWidth: getWidth,
             imageLoad: imageLoad,
             hideBad: hideBad,
+            correction: correction,
             getEffect: getEffect
         };
     } ]);
