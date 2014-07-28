@@ -40,5 +40,8 @@ app.controller("baseController", ['$scope','$document', function ($scope, $docum
            src: 'img/002.jpg'
        }
    ];
+   $scope.changeData = function () {
+      console.log('asdasd');
+   };
 } ]);
 
