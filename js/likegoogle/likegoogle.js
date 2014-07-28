@@ -7,106 +7,153 @@
  * Description: Resizing and output images like Google Images
  */
 (function (w, d, an) {
-    var likegoogle = an.module("likegoogle", []);
-    likegoogle.directive("likeGoogle", ["$likeGoogle", "$timeout", function ($likeGoogle, $timeout) {
-        return {
-            scope: {},
-            link: function (scope, elem, attr) {
-                var settings = scope.$eval(attr.settings) || {};
-                var config = an.extend({
-                    blockWidth: elem[0].clientWidth,
-                    eligibleHeight: 100,
-                    margin: 5,
-                    likeClass: '.like',
-                    effect: 2
-                }, settings);
-                var rows = []; //строки
-                scope.images = elem[0].querySelectorAll(config.likeClass);
-                var start = function () {
-                    $likeGoogle.imageLoad(scope.images, function (success, errors) {
-                        if (errors.length) {//Hide bad images
-                            $likeGoogle.hideBad(errors, elem);
-                        }
-                        var row = { items: [], width: 0 }, rowWidth = 0, i = 0;
-                        an.forEach(success, function (image) {
-                            var item = {
-                                oric_width: image.width,
-                                oric_height: image.height,
-                                el: image,
-                                parent: image.parentNode
-                            };
-                            item.parent.style.cssText += $likeGoogle.getEffect(config, 'start');
-                            item.compress_ratio = config.eligibleHeight / item.oric_height;
-                            item.width = item.oric_width * item.compress_ratio;
-                            item.height = item.oric_height * item.compress_ratio;
-                            rowWidth = $likeGoogle.getRowWidth(row.items, config, item);
-                            if (rowWidth > config.blockWidth) {
-                                rows.push(row);
-                                row = {
-                                    items: [],
-                                    width: 0
-                                };
-                            }
-                            row.items.push(item);
-                        });
-                        rows.push(row);
-                        row.last = true;
-                        an.forEach(rows, function (row) {
-                            if (!row.last) {
-                                row.compress_ratio = (config.blockWidth - (row.items.length - 1) * config.margin) / $likeGoogle.getRowWidth(row.items, config);
-                            }
-                            var last;
-                            an.forEach(row.items, function (item, k) {
-                                if (row.compress_ratio) {
-                                    item.width = Math.round(item.width * row.compress_ratio);
-                                    item.height = Math.round(item.height * row.compress_ratio);
-                                }
-                                last = item;
-                                item.el.width = item.width;
-                                item.el.height = item.height;
-
-                                if (k > 0) {
-                                    item.parent.style.cssText += 'margin-bottom: ' + config.margin + 'px; margin-left: ' + config.margin + 'px; float: left;';
+    "use strict";
+    var likegoogle = an.module("likegoogle", [])
+        .directive("ngLikeGoogle", ["$likeGoogle", "$timeout", function ($likeGoogle, $timeout) {
+            return {
+                scope: {},
+                controller: function ($scope, $element) {
+                    this.items = [];
+                    this.scope = $scope;
+                },
+                link: function (scope, elem, attr, controller) {
+                    var settings = scope.$eval(attr.settings) || {};
+                    var config = an.extend({
+                        blockWidth: elem[0].clientWidth,
+                        eligibleHeight: 100,
+                        margin: 5,
+                        effect: 2
+                    }, settings);
+                    var rows = [];
+                    scope.$on("start", function () {
+                        console.log(controller.items);
+                    });
+                }
+            };
+        } ])
+        .directive('ngGoogleLast', [function () {
+            return {
+                controller: function ($scope, $element) {
+                    if ($scope.$last) {
+                        this.last = true;
+                    }
+                }
+            };
+        }])
+        .directive("ngGoogleItem", ['$likeGoogle', '$interval', function ($likeGoogle, $interval) {
+            return {
+                controller: function ($scope, $element) {
+                    this.load = function (images, callback) {
+                        var ln = images.length, i = 0,
+                            _load = function (i) {
+                                if (i < ln) {
+                                    var img = images[i].source[0], watcher;
+                                    watcher = $interval(function () {
+                                        if (img.complete) {
+                                            an.extend(images[i], {
+                                                oricWidth: img.width,
+                                                oricHeight: img.height
+                                            });
+                                            $interval.cancel(watcher);
+                                            i++;
+                                            _load(i);
+                                        }
+                                    }, 20);
                                 } else {
-                                    item.parent.style.cssText += 'margin-bottom: ' + config.margin + 'px; margin-left: 0; float: left;';
+                                    callback(images);
                                 }
-                            });
-                            if (!row.last) {
-                                $likeGoogle.correction(row, config);
-                            }
-                            an.forEach(row.items, function (item) {
-                                item.parent.style.cssText += $likeGoogle.getEffect(config, "end", "opacity");
-                            });
+                            };
+                        _load(i);
+                    };
+                },
+                require: ['^ngLikeGoogle', '^ngGoogleLast', '^ngGoogleItem'],
+                link: function (scope, elem, attr, controllers) {
+                    var like = controllers[0], gLast = controllers[1], that = controllers[2];
+                    like.items.push({
+                        source: elem,
+                        attributes: attr,
+                        parent: elem[0].parentNode
+                    });
+                    if (gLast.last) {
+                        that.load(like.items, function (images) {
+                            like.items = images;
+                            like.scope.$emit("start");
                         });
-                    });
-                };
-
-                if (scope.images.length) {
-                    start();
-                } else {
-                    scope.$parent.$on("endRepeat", function () {
-                        scope.images = elem[0].querySelectorAll(config.likeClass);
-                        start();
-                    });
+                    }
                 }
             }
-        };
-    } ]);
-    likegoogle.directive('lastRepeat', ["$timeout", function ($timeout) {
-        return {
-            link: function (scope, elem, attr) {
-                if (scope.$last) {
-                    $timeout(function () {
-                        scope.$emit("endRepeat");
-                    }, 1);
-                }
-            }
-        };
-    }]);
+        }]);
+//                scope.images = elem[0].querySelectorAll(config.likeClass);
+//                var start = function () {
+//                    $likeGoogle.imageLoad(scope.images, function (success, errors) {
+//                        if (errors.length) {//Hide bad images
+//                            $likeGoogle.hideBad(errors, elem);
+//                        }
+//                        var row = { items: [], width: 0 }, rowWidth = 0, i = 0;
+//                        an.forEach(success, function (image) {
+//                            var item = {
+//                                oric_width: image.width,
+//                                oric_height: image.height,
+//                                el: image,
+//                                parent: image.parentNode
+//                            };
+//                            item.parent.style.cssText += $likeGoogle.getEffect(config, 'start');
+//                            item.compress_ratio = config.eligibleHeight / item.oric_height;
+//                            item.width = item.oric_width * item.compress_ratio;
+//                            item.height = item.oric_height * item.compress_ratio;
+//                            rowWidth = $likeGoogle.getRowWidth(row.items, config, item);
+//                            if (rowWidth > config.blockWidth) {
+//                                rows.push(row);
+//                                row = {
+//                                    items: [],
+//                                    width: 0
+//                                };
+//                            }
+//                            row.items.push(item);
+//                        });
+//                        rows.push(row);
+//                        row.last = true;
+//                        an.forEach(rows, function (row) {
+//                            if (!row.last) {
+//                                row.compress_ratio = (config.blockWidth - (row.items.length - 1) * config.margin) / $likeGoogle.getRowWidth(row.items, config);
+//                            }
+//                            var last;
+//                            an.forEach(row.items, function (item, k) {
+//                                if (row.compress_ratio) {
+//                                    item.width = Math.round(item.width * row.compress_ratio);
+//                                    item.height = Math.round(item.height * row.compress_ratio);
+//                                }
+//                                last = item;
+//                                item.el.width = item.width;
+//                                item.el.height = item.height;
+//
+//                                if (k > 0) {
+//                                    item.parent.style.cssText += 'margin-bottom: ' + config.margin + 'px; margin-left: ' + config.margin + 'px; float: left;';
+//                                } else {
+//                                    item.parent.style.cssText += 'margin-bottom: ' + config.margin + 'px; margin-left: 0; float: left;';
+//                                }
+//                            });
+//                            if (!row.last) {
+//                                $likeGoogle.correction(row, config);
+//                            }
+//                            an.forEach(row.items, function (item) {
+//                                item.parent.style.cssText += $likeGoogle.getEffect(config, "end", "opacity");
+//                            });
+//                        });
+//                    });
+//                };
+//
+//                if (scope.images.length) {
+//                    start();
+//                } else {
+//                    scope.$parent.$on("endRepeat", function () {
+//                        scope.images = elem[0].querySelectorAll(config.likeClass);
+//                        start();
+//                    });
+//                }
     likegoogle.factory("$likeGoogle", ['$timeout', function ($timeout) {
         var correction = function (row, config) {
             var stock = config.blockWidth - getWidth(row.items, config);
-            console.log(getWidth(row.items, config));
             if (stock > 0) {
                 var ln = row.items.length, step = Math.ceil(stock / ln), j = ln - 1;
                 for (var i = stock; i >= step; i = i - step) {
@@ -132,36 +179,6 @@
                 width += item.width;
             }
             return width;
-        };
-        /*
-         * Check loading images
-         */
-        var imageLoad = function (images, callback) {
-            var ln = images.length, success = [], errors = [],
-                _load = function (i) {
-                    if (!i) {
-                        i = 0;
-                    }
-                    if (i < ln) {
-                        var img = new Image();
-                        img.onload = function () {
-                            success.push(images[i]);
-                            i++;
-                            _load(i);
-                            img = null;
-                        };
-                        img.onerror = function () {
-                            errors.push(images[i]);
-                            i++;
-                            _load(i);
-                            img = null;
-                        };
-                        img.src = images[i].src;
-                    } else {
-                        callback(success, errors);
-                    }
-                };
-            _load();
         };
         /*
          * Delete bad images from page
@@ -215,7 +232,6 @@
 
         return {
             getRowWidth: getWidth,
-            imageLoad: imageLoad,
             hideBad: hideBad,
             correction: correction,
             getEffect: getEffect

@@ -7,9 +7,9 @@
         <title></title>
     </head>
     <body ng-controller="baseController">
-        <div class="images" data-like-google>
-            <a href="#" ng-repeat="image in images" data-last-repeat>
-                <img class="like" src="{{image.src}}" alt="" />
+        <div class="images" ng-like-google>
+            <a href="#" ng-repeat="image in images" ng-google-last>
+                <img class="like" ng-google-item src="{{image.src}}" alt="" />
             </a>
         </div>
         <script src="js/libs/angular/angular.min.js"></script>
