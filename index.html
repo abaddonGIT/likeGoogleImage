@@ -7,8 +7,8 @@
         <title></title>
     </head>
     <body ng-controller="baseController">
-        <div class="images" ng-like-google>
-            <a href="#" ng-repeat="image in images" ng-google-last>
+        <div class="images" ng-like-google model="images">
+            <a href="#" ng-repeat="image in images track by $index" ng-google-last>
                 <img class="like" ng-google-item src="{{image.src}}" alt="" />
             </a>
         </div>
