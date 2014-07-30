@@ -24,30 +24,49 @@
 
                         this.run = function () {
                             var rows = this.buildRows();//Получаем картинки разбитые на строки
-                            console.log(rows);
                             this.makeNicely(rows);
                         };
                     };
                     Good.prototype = {
-                        extendModel: function () {//Расширение тсходной модели данными и ф-ями директивы
-                            var ln = this.items.length;
-                            while (ln--) {
-                                var loc = this.items[ln];
-                                if (loc.source[0].naturalWidth) {
-                                    an.extend($scope.model[ln], this.items[ln]);
-                                } else {
-                                    $scope.model.splice(ln, 1);
+                        getRowWidth: function (collection, item) {
+                            var config = this.config;
+                            var width = 0, ln = collection.length;
+                            if (ln) {
+                                width = (ln - 1) * config.margin; //Общая длина отступов
+                                while (ln--) {
+                                    var loc = collection[ln];
+                                    width += loc.width;
                                 }
                             }
+                            if (item) {
+                                width += item.width;
+                            }
+                            return width;
                         },
-                        buildRows: function () {
-                            var rows = [], row = { items: [], width: 0 }, rowWidth = 0, i = 0, config = this.config;
+                        extendModel: function () {//Расширение исходной модели, данными и ф-ями директивы
+                            var ln = this.items.length;
+                            if (this.config.nomodel) {
+                                $scope.model = this.items;
+                            } else {
+                                while (ln--) {
+                                    var loc = this.items[ln];
+                                    if (loc.source[0].naturalWidth) {
+                                        an.extend($scope.model[ln], this.items[ln]);
+                                    } else {
+                                        $scope.model.splice(ln, 1);
+                                    }
+                                }
+                                //console.log($scope.model);
+                            }
+                        },
+                        buildRows: function () {//распределение картинок по строкам
+                            var rows = [], row = { items: [], width: 0 }, rowWidth = 0, config = this.config;
                             an.forEach($scope.model, function (item) {
                                 item.parent.style.cssText += $likeGoogle.getEffect('start');
                                 item.compress_ratio = config.eligibleHeight / item.oricHeight;
                                 item.width = item.oricWidth * item.compress_ratio;
                                 item.height = item.oricHeight * item.compress_ratio;
-                                rowWidth = $likeGoogle.getRowWidth(row.items, config, item);
+                                rowWidth = this.getRowWidth(row.items, item);
                                 if (rowWidth > config.blockWidth) {
                                     row.width = rowWidth - item.width;
                                     rows.push(row);
@@ -57,41 +76,68 @@
                                     };
                                 }
                                 row.items.push(item);
-                            });
+                            }.bind(this));
                             row.width = rowWidth;
                             rows.push(row);
                             row.last = true;
                             return rows;
                         },
-                        makeNicely: function (rows) {
+                        createView: function (row, marginWidth) {//подстройка картинок под размер блока
+                            var config = this.config;
+                            row.width = 0;
+                            an.forEach(row.items, function (item, k) {
+                                var source = item.source[0];
+                                if (row.compress_ratio) {
+                                    item.width = Math.round(item.width * row.compress_ratio);
+                                    item.height = Math.round(item.height * row.compress_ratio);
+                                }
+                                source.width = item.width;
+                                source.height = item.height;
+                                row.width += item.width;
+                                if (k > 0) {
+                                    item.parent.style.cssText += 'margin-bottom: ' + config.margin + 'px; margin-left: ' + config.margin + 'px; float: left;';
+                                } else {
+                                    item.parent.style.cssText += 'margin-bottom: ' + config.margin + 'px; margin-left: 0; float: left;';
+                                }
+                            });
+                            row.width += marginWidth;
+                        },
+                        show: function (row) {//выводит сформированные изображения
+                            var ln = row.items.length;
+                            while (ln--) {
+                                var item = row.items[ln];
+                                item.parent.style.cssText += $likeGoogle.getEffect("end", "opacity");
+                            }
+                        },
+                        correction: function (row) {
+                            var stock = this.config.blockWidth - row.width;
+                            if (stock > 0) {
+                                var ln = row.items.length, step = Math.ceil(stock / ln), j = ln - 1;
+                                for (var i = stock; i >= step; i = i - step) {
+                                    var item = row.items[j];
+                                    row.width += step;
+                                    item.width += step;
+                                    item['source'][0].width = row.items[j].width;
+                                    j--;
+                                }
+                                stock = this.config.blockWidth - row.width;
+                                row.items[0].width += stock;
+                                row.items[0]['source'][0].width = row.items[0].width;
+                            }
+                        },
+                        makeNicely: function (rows) {//Делает красиво
                             var config = this.config , cof
                             an.forEach(rows, function (row) {
+                                var marginWidth = (row.items.length - 1) * config.margin;
                                 if (!row.last) {
-                                    row.compress_ratio = cof = (config.blockWidth - (row.items.length - 1) * config.margin) / row.width;
+                                    row.compress_ratio = cof = (config.blockWidth - marginWidth) / row.width;
                                 }
-                                var last;
-                                an.forEach(row.items, function (item, k) {
-                                    if (row.compress_ratio) {
-                                        item.width = Math.round(item.width * row.compress_ratio);
-                                        item.height = Math.round(item.height * row.compress_ratio);
-                                    }
-                                    last = item;
-                                    item.source[0].width = item.width;
-                                    item.source[0].height = item.height;
-
-                                    if (k > 0) {
-                                        item.parent.style.cssText += 'margin-bottom: ' + config.margin + 'px; margin-left: ' + config.margin + 'px; float: left;';
-                                    } else {
-                                        item.parent.style.cssText += 'margin-bottom: ' + config.margin + 'px; margin-left: 0; float: left;';
-                                    }
-                                });
-                                if (!row.last) {
-                                    $likeGoogle.correction(row, config);
+                                this.createView(row, marginWidth);
+                                if (!row.last) {//Кориктеровка
+                                    this.correction(row);
                                 }
-                                an.forEach(row.items, function (item) {
-                                    item.parent.style.cssText += $likeGoogle.getEffect("end", "opacity");
-                                });
-                            });
+                                this.show(row);
+                            }.bind(this));
                         }
                     };
                     this.good = new Good();
@@ -102,7 +148,8 @@
                         blockWidth: elem[0].clientWidth,
                         eligibleHeight: 100,
                         margin: 5,
-                        effect: 2
+                        effect: 2,
+                        nomodel: false
                     }, settings);
                     var rows = [];
                     scope.$on("start", function () {
@@ -146,55 +193,40 @@
                             };
                         _load(i);
                     };
+                    this.scope = null;
+                    var Image = function (elem, attr) {
+                        an.extend(this, {
+                            source: elem,
+                            attributes: attr,
+                            parent: elem[0].parentNode
+                        });
+                        this.remove = function () {
+
+                        };
+                        return this;
+                    };
+                    Image.prototype = {
+
+                    };
+
+                    this.Image = Image;
                 },
-                require: ['^ngLikeGoogle', '^ngGoogleLast', '^ngGoogleItem'],
+                require: ['^ngLikeGoogle', '^?ngGoogleLast', '^ngGoogleItem'],
                 link: function (scope, elem, attr, controllers) {
-                    var like = controllers[0].good, gLast = controllers[1], that = controllers[2];
-                    like.items.push({
-                        source: elem,
-                        attributes: attr,
-                        parent: elem[0].parentNode
-                    });
-                    if (gLast.last) {
+                    var like = controllers[0].good, gLast = controllers[1] ? controllers[1].last : attr.ngGoogleItem, that = controllers[2];
+                    var item = new that.Image(elem, attr);
+                    like.items.push(item);
+                    if (gLast) {
                         that.load(like.items, function (images) {
                             like.items = images;
                             like.scope.$emit("start");
                         });
                     }
+                    item = null;
                 }
             }
         }])
         .factory("$likeGoogle", ['$timeout', function ($timeout) {
-            var correction = function (row, config) {
-                console.log(row.width + '||' + getWidth(row.items, config));
-                var stock = config.blockWidth - getWidth(row.items, config);
-                if (stock > 0) {
-                    var ln = row.items.length, step = Math.ceil(stock / ln), j = ln - 1;
-                    for (var i = stock; i >= step; i = i - step) {
-                        row.width += step;
-                        row.items[j].width += step;
-                        row.items[j]['source'][0].width = row.items[j].width;
-                        j--;
-                    }
-                    stock = config.blockWidth - getWidth(row.items, config);
-                    row.items[0].width += stock;
-                    row.items[0]['source'][0].width = row.items[0].width;
-                }
-            };
-            var getWidth = function (collection, config, item) {
-                var width = 0, ln = collection.length;
-                if (ln) {
-                    width = (ln - 1) * config.margin; //Общая длина отступов
-                    while (ln--) {
-                        var loc = collection[ln];
-                        width += loc.width;
-                    }
-                }
-                if (item) {
-                    width += item.width;
-                }
-                return width;
-            };
             var random = function getRandomInt(min, max) {
                 return Math.floor(Math.random() * (max - min + 1)) + min;
             };
@@ -220,8 +252,6 @@
                 }
             };
             return {
-                getRowWidth: getWidth,
-                correction: correction,
                 getEffect: getEffect
             };
         } ]);

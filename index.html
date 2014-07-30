@@ -1,25 +1,59 @@
 <!DOCTYPE html>
 
 <html lang="en" ng-app="app" id="ng-app">
-    <head>
-        <meta charset="utf-8" />
-        <link rel="stylesheet" href="css/style.css" />
-        <title></title>
-    </head>
-    <body ng-controller="baseController">
-        <div class="images" ng-like-google model="images">
-            <a href="#" ng-repeat="image in images track by $index" ng-google-last>
-                <img class="like" ng-google-item src="{{image.src}}" alt="" />
-            </a>
-        </div>
-        <hr />
-        <div class="images" ng-like-google model="images2">
-            <a href="#" ng-repeat="image in images2 track by $index" ng-google-last>
-                <img class="like" ng-google-item src="{{image.src}}" alt="" />
-            </a>
-        </div>
-        <script src="js/libs/angular/angular.min.js"></script>
-        <script src="js/likegoogle/likegoogle.js"></script>
-        <script src="js/main.js"></script>
-    </body>
+<head>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="css/style.css"/>
+    <title></title>
+</head>
+<body ng-controller="baseController">
+<div class="images" ng-like-google settings="{nomodel: true}">
+    <a href="#">
+        <img src="img/003.jpg" ng-google-item alt=""/>
+    </a>
+    <a href="#">
+        <img src="img/03.jpg" ng-google-item alt=""/>
+    </a>
+    <a href="#">
+        <img src="img/02.jpg" ng-google-item alt=""/>
+    </a>
+    <a href="#">
+        <img src="img/002.jpg" ng-google-item alt=""/>
+    </a>
+    <a href="#">
+        <img src="img/01.jpg" ng-google-item alt=""/>
+    </a>
+    <a href="#">
+        <img src="img/003.jpg" ng-google-item alt=""/>
+    </a>
+    <a href="#">
+        <img src="img/03.jpg" ng-google-item alt=""/>
+    </a>
+    <a href="#">
+        <img src="img/02.jpg" ng-google-item alt=""/>
+    </a>
+    <a href="#">
+        <img src="img/002.jpg" ng-google-item alt=""/>
+    </a>
+    <a href="#">
+        <img src="img/01.jpg" ng-google-item="last" alt=""/>
+    </a>
+</div>
+<hr/>
+<div class="images" ng-like-google model="images">
+    <a href="#" ng-repeat="image in images" ng-google-last>
+        <img class="like" ng-google-item ng-click="image.remove()" src="{{image.src}}" alt=""/>
+    </a>
+</div>
+<hr/>
+<!--
+<div class="images" ng-like-google model="images2">
+    <a href="#" ng-repeat="image in images2" ng-google-last>
+        <img class="like" ng-google-item src="{{image.src}}" alt="" />
+    </a>
+</div>-->
+<script src="js/libs/angular/angular.min.js"></script>
+<script src="js/likegoogle/likegoogle.js"></script>
+<script src="js/main.js"></script>
+</body>
 </html>
