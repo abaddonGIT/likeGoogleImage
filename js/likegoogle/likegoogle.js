@@ -56,7 +56,6 @@
                                         $scope.model.splice(ln, 1);
                                     }
                                 }
-                                //console.log($scope.model);
                             }
                         },
                         buildRows: function () {//распределение картинок по строкам
@@ -152,9 +151,20 @@
                         nomodel: false
                     }, settings);
                     var rows = [];
-                    scope.$on("start", function () {
+                    scope.$on("start", function () {//старт перерисовки
                         controller.good.extendModel();
                         controller.good.run();
+                    });
+                    scope.$on("image:delete", function (event, image) {//удаление картинки
+                        var model = scope.model, delIndex = model.indexOf(image);
+                        if (delIndex !== -1) {
+                            var delElem = model[delIndex].parent;
+                            delElem.style.cssText += $likeGoogle.getEffect('remove');
+                            $timeout(function () {
+                                model.splice(delIndex, 1);
+                                controller.good.run();
+                            }, 500);
+                        }
                     });
                 }
             };
@@ -168,9 +178,10 @@
                 }
             };
         }])
-        .directive("ngGoogleItem", ['$likeGoogle', '$interval', function ($likeGoogle, $interval) {
+        .directive("ngGoogleItem", ['$likeGoogle', '$interval', '$timeout', function ($likeGoogle, $interval, $timeout) {
             return {
                 controller: function ($scope, $element) {
+                    var that = this;
                     this.load = function (images, callback) {//Отслеживаем когда изображения будут полностью загружены
                         var ln = images.length, i = 0,
                             _load = function (i) {
@@ -193,15 +204,15 @@
                             };
                         _load(i);
                     };
-                    this.scope = null;
+                    this.likeScope = null;
                     var Image = function (elem, attr) {
                         an.extend(this, {
                             source: elem,
                             attributes: attr,
                             parent: elem[0].parentNode
                         });
-                        this.remove = function () {
-
+                        this.remove = function () {//Удаление картики из набора
+                            that.likeScope.$emit("image:delete", this);
                         };
                         return this;
                     };
@@ -213,8 +224,9 @@
                 },
                 require: ['^ngLikeGoogle', '^?ngGoogleLast', '^ngGoogleItem'],
                 link: function (scope, elem, attr, controllers) {
-                    var like = controllers[0].good, gLast = controllers[1] ? controllers[1].last : attr.ngGoogleItem, that = controllers[2];
-                    var item = new that.Image(elem, attr);
+                    var like = controllers[0].good, gLast = controllers[1] ? controllers[1].last : attr.ngGoogleItem, that = controllers[2],
+                        item = new that.Image(elem, attr);
+                    that.likeScope = like.scope;
                     like.items.push(item);
                     if (gLast) {
                         that.load(like.items, function (images) {
@@ -234,22 +246,38 @@
                 time = time || 1;
                 var res = {},
                     _common = function (time) {
-                        return "-webkit-transition: opacity " + time + "s ease;" +
-                            "-moz-transition: opacity " + time + "s ease;" +
-                            "-o-transition: opacity " + time + "s ease; " +
-                            "transition: opacity " + time + "s ease;";
+                        return "-webkit-transition-property: -webkit-transform, opacity;" +
+                            "-webkit-transition-duration: 0.5s, " + time + "s;" +
+                            "-webkit-transition-timing-function: easy;" +
+                            "-moz-transition-property: -moz-transform, opacity;" +
+                            "-moz-transition-duration: 0.5s, " + time + "s;" +
+                            "-moz-transition-timing-function: easy;" +
+                            "-o-transition-property: -o-transform, opacity;" +
+                            "-o-transition-duration: 0.5s, " + time + "s;" +
+                            "-o-transition-timing-function: easy;" +
+                            "transition-property: transform, opacity;" +
+                            "transition-duration: 0.5s, " + time + "s;" +
+                            "transition-timing-function: easy;";
                     };
                 res = {
                     startStyle: 'opacity: 0;',
-                    endStyle: 'opacity: 1;' + _common(random(1, 5))
+                    endStyle: 'opacity: 1;' + _common(random(1, 5)),
+                    removeStyle: '-webkit-transform: scale(0.1);'
                 };
-                if (phase === "start") {
-                    return res.startStyle;
-                } else if (phase === "end") {
-                    return res.endStyle;
-                } else {
-                    return res;
+                switch (phase) {
+                    case 'start':
+                        return res.startStyle;
+                        break;
+                    case 'end':
+                        return res.endStyle;
+                        break;
+                    case 'remove':
+                        return res.removeStyle;
+                        break;
+                    default:
+                        return res;
                 }
+                ;
             };
             return {
                 getEffect: getEffect
