@@ -12,7 +12,8 @@
         .directive("ngLikeGoogle", ["$likeGoogle", "$timeout", "$q", function ($likeGoogle, $timeout, $q) {
             return {
                 scope: {
-                    model: "=?"
+                    model: "=?",
+                    methods: "=?"
                 },
                 controller: function ($scope, $element) {
                     var Good = function () {
@@ -53,10 +54,14 @@
                                     if (loc.source[0].naturalWidth) {
                                         an.extend($scope.model[ln], this.items[ln]);
                                     } else {
-                                        $scope.model.splice(ln, 1);
+                                        this.clearBad(ln);
                                     }
                                 }
                             }
+                        },
+                        clearBad: function (ln) {
+                            $scope.model.splice(ln, 1);
+                            this.items.splice(ln, 1);
                         },
                         buildRows: function () {//распределение картинок по строкам
                             var rows = [], row = { items: [], width: 0 }, rowWidth = 0, config = this.config;
@@ -157,7 +162,7 @@
                     });
                     scope.$on("image:delete", function (event, image) {//удаление картинки
                         var model = scope.model, delIndex = model.indexOf(image);
-                        if (delIndex !== -1) {
+                        if (delIndex !== -1 && !config.nomodel) {
                             var delElem = model[delIndex].parent;
                             delElem.style.cssText += $likeGoogle.getEffect('remove');
                             $timeout(function () {
@@ -166,6 +171,14 @@
                             }, 500);
                         }
                     });
+                    scope.methods = {
+                        add: function (newItem) {//Добавление элемента в набор
+                           scope.model.push(newItem);
+                        },
+                        update: function () {
+                            controller.good.run();
+                        }
+                    };
                 }
             };
         } ])
@@ -182,28 +195,6 @@
             return {
                 controller: function ($scope, $element) {
                     var that = this;
-                    this.load = function (images, callback) {//Отслеживаем когда изображения будут полностью загружены
-                        var ln = images.length, i = 0,
-                            _load = function (i) {
-                                if (i < ln) {
-                                    var img = images[i].source[0], watcher;
-                                    watcher = $interval(function () {
-                                        if (img.complete) {
-                                            an.extend(images[i], {
-                                                oricWidth: img.width,
-                                                oricHeight: img.height
-                                            });
-                                            $interval.cancel(watcher);
-                                            i++;
-                                            _load(i);
-                                        }
-                                    }, 20);
-                                } else {
-                                    callback(images);
-                                }
-                            };
-                        _load(i);
-                    };
                     this.likeScope = null;
                     var Image = function (elem, attr) {
                         an.extend(this, {
@@ -216,9 +207,6 @@
                         };
                         return this;
                     };
-                    Image.prototype = {
-
-                    };
 
                     this.Image = Image;
                 },
@@ -229,7 +217,7 @@
                     that.likeScope = like.scope;
                     like.items.push(item);
                     if (gLast) {
-                        that.load(like.items, function (images) {
+                        $likeGoogle.checkLoad(like.items, function (images) {
                             like.items = images;
                             like.scope.$emit("start");
                         });
@@ -238,7 +226,29 @@
                 }
             }
         }])
-        .factory("$likeGoogle", ['$timeout', function ($timeout) {
+        .factory("$likeGoogle", ['$interval', function ($interval) {
+            var load = function (images, callback) {//Отслеживаем когда изображения будут полностью загружены
+                var ln = images.length, i = 0,
+                    _load = function (i) {
+                        if (i < ln) {
+                            var img = images[i].source[0], watcher;
+                            watcher = $interval(function () {
+                                if (img.complete) {
+                                    an.extend(images[i], {
+                                        oricWidth: img.width,
+                                        oricHeight: img.height
+                                    });
+                                    $interval.cancel(watcher);
+                                    i++;
+                                    _load(i);
+                                }
+                            }, 20);
+                        } else {
+                            callback(images);
+                        }
+                    };
+                _load(i);
+            };
             var random = function getRandomInt(min, max) {
                 return Math.floor(Math.random() * (max - min + 1)) + min;
             };
@@ -277,10 +287,10 @@
                     default:
                         return res;
                 }
-                ;
             };
             return {
-                getEffect: getEffect
+                getEffect: getEffect,
+                checkLoad: load
             };
         } ]);
 })(window, document, angular);

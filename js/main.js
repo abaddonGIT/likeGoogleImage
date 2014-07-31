@@ -1,5 +1,8 @@
 var app = angular.module("app", ['likegoogle']);
 app.controller("baseController", ['$scope','$document', function ($scope, $document) {
+   $scope.addToModel = function () {
+       $scope.methods.add({src: 'img/003.jpg'});
+   };
    $scope.images = [
        {
            src: 'img/002.jpg'
