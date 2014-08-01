@@ -58,6 +58,7 @@
                                     }
                                 }
                             }
+                            console.log($scope.model);
                         },
                         clearBad: function (ln) {
                             $scope.model.splice(ln, 1);
@@ -173,10 +174,20 @@
                     });
                     scope.methods = {
                         add: function (newItem) {//Добавление элемента в набор
-                           scope.model.push(newItem);
+                            scope.model.push(newItem);
                         },
                         update: function () {
-                            controller.good.run();
+                            var ln = scope.model.length;
+                            while (ln--) {
+                                var loc = scope.model[ln];
+                                loc.parent.style.cssText += '-webkit-transform: scale(0);';
+                            }
+                            $timeout(function () {
+                                controller.good.run();
+                            }, 500);
+                        },
+                        clear: function () {//Очистить массив найденных изображений
+                            controller.good.items = [];
                         }
                     };
                 }
@@ -207,7 +218,6 @@
                         };
                         return this;
                     };
-
                     this.Image = Image;
                 },
                 require: ['^ngLikeGoogle', '^?ngGoogleLast', '^ngGoogleItem'],
@@ -234,9 +244,11 @@
                             var img = images[i].source[0], watcher;
                             watcher = $interval(function () {
                                 if (img.complete) {
+                                    !images[i].oricWidth ? (images[i].defWidth = img.width) : 0;
+                                    !images[i].oricHeight ? (images[i].defHeight = img.height) : 0;
                                     an.extend(images[i], {
-                                        oricWidth: img.width,
-                                        oricHeight: img.height
+                                        oricWidth: images[i].defWidth || img.width,
+                                        oricHeight: images[i].defHeight || img.height
                                     });
                                     $interval.cancel(watcher);
                                     i++;
