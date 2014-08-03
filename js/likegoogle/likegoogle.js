@@ -58,7 +58,6 @@
                                     }
                                 }
                             }
-                            console.log($scope.model);
                         },
                         clearBad: function (ln) {
                             $scope.model.splice(ln, 1);
