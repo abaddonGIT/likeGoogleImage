@@ -182,6 +182,7 @@
                                 loc.parent.style.cssText += '-webkit-transform: scale(0);';
                             }
                             $timeout(function () {
+                                controller.good.config.blockWidth = elem[0].clientWidth;
                                 controller.good.run();
                             }, 500);
                         },
