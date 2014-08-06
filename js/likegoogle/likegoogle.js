@@ -40,7 +40,7 @@
                                 }
                             }
                             if (item) {
-                                width += item.width;
+                                width += item.width + config.margin;
                             }
                             return width;
                         },
