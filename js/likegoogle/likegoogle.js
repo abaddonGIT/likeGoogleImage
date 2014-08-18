@@ -26,9 +26,38 @@
                         this.run = function () {
                             var rows = this.buildRows();//Получаем картинки разбитые на строки
                             this.makeNicely(rows);
+                            var ln = rows.length;
+                            if (ln >= 2) {
+                                this.makeLastNicely(rows[ln - 1], rows[ln - 2]);
+                            }
                         };
                     };
                     Good.prototype = {
+                        makeLastNicely: function (last, prelast) {
+                            var config = this.config , blockWidth = config['blockWidth'], allCount = last['items'].length + prelast['items'].length, firstIn = Math.floor(allCount / 2), secondIn = Math.ceil(allCount / 2);
+                            var one = {'items': [], 'width': 0}, two = {'items': [], 'width': 0}, newRow = [];
+                            an.forEach(prelast['items'], function (v, k) {
+                                if (k < firstIn) {
+                                    one['items'].push(v);
+                                    one['width'] += v.widthD;
+                                } else {
+                                    two['items'].push(v);
+                                    two['width'] += v.widthD;
+                                }
+                            });
+                            an.forEach(last['items'], function (v, k) {
+                                if (one['items'].length < firstIn) {
+                                    one['items'].push(v);
+                                    one['width'] += v.widthD;
+                                } else {
+                                    two['items'].push(v);
+                                    two['width'] += v.widthD;
+                                }
+                            });
+                            var rows = [];
+                            rows.push(one, two);
+                            this.makeNicely(rows, 1);
+                        },
                         getRowWidth: function (collection, item) {
                             var config = this.config;
                             var width = 0, ln = collection.length;
@@ -68,8 +97,8 @@
                             an.forEach($scope.model, function (item) {
                                 item.parent.style.cssText += $likeGoogle.getEffect('start');
                                 item.compress_ratio = config.eligibleHeight / item.oricHeight;
-                                item.width = item.oricWidth * item.compress_ratio;
-                                item.height = item.oricHeight * item.compress_ratio;
+                                item.width = item.widthD = item.oricWidth * item.compress_ratio;
+                                item.height = item.heightD = item.oricHeight * item.compress_ratio;
                                 rowWidth = this.getRowWidth(row.items, item);
                                 if (rowWidth > config.blockWidth) {
                                     row.width = rowWidth - item.width;
@@ -87,13 +116,13 @@
                             return rows;
                         },
                         createView: function (row, marginWidth) {//подстройка картинок под размер блока
-                            var config = this.config;
+                            var config = this.config, rowHeight = 0;
                             row.width = 0;
                             an.forEach(row.items, function (item, k) {
                                 var source = item.source[0];
                                 if (row.compress_ratio) {
-                                    item.width = Math.round(item.width * row.compress_ratio);
-                                    item.height = Math.round(item.height * row.compress_ratio);
+                                    item.width = Math.floor(item.widthD * row.compress_ratio);
+                                    item.height = Math.floor(item.heightD * row.compress_ratio);
                                 }
                                 source.width = item.width;
                                 source.height = item.height;
@@ -103,8 +132,18 @@
                                 } else {
                                     item.parent.style.cssText += 'margin-bottom: ' + config.margin + 'px; margin-left: 0; float: left;';
                                 }
+                                item.parent.style.cssText += 'height: auto;';
+
+                                if (item.height > config['maxHeight']) {
+                                    rowHeight = config['maxHeight'];
+                                }
                             });
                             row.width += marginWidth;
+                            if (rowHeight) {
+                                an.forEach(row.items, function (item) {
+                                    item.parent.style.cssText += 'height: ' + rowHeight + 'px; overflow: hidden; display: block;';
+                                });
+                            }
                         },
                         show: function (row) {//выводит сформированные изображения
                             var ln = row.items.length;
@@ -121,23 +160,28 @@
                                     var item = row.items[j];
                                     row.width += step;
                                     item.width += step;
+                                    item.height += step;
                                     item['source'][0].width = row.items[j].width;
+                                    item['source'][0].height = row.items[j].height;
                                     j--;
                                 }
                                 stock = this.config.blockWidth - row.width;
                                 row.items[0].width += stock;
+                                row.items[0].height += stock;
+                                row.width += stock;
                                 row.items[0]['source'][0].width = row.items[0].width;
+                                row.items[0]['source'][0].height = row.items[0].height;
                             }
                         },
-                        makeNicely: function (rows) {//Делает красиво
+                        makeNicely: function (rows, flag) {//Делает красиво
                             var config = this.config , cof
                             an.forEach(rows, function (row) {
                                 var marginWidth = (row.items.length - 1) * config.margin;
-                                if (!row.last) {
+                                if (!row.last || flag) {
                                     row.compress_ratio = cof = (config.blockWidth - marginWidth) / row.width;
                                 }
                                 this.createView(row, marginWidth);
-                                if (!row.last) {//Кориктеровка
+                                if (!row.last || flag) {//Кориктеровка
                                     this.correction(row);
                                 }
                                 this.show(row);
@@ -151,6 +195,7 @@
                     var config = controller.good.config = an.extend({
                         blockWidth: elem[0].clientWidth,
                         eligibleHeight: 100,
+                        maxHeight: 200,
                         margin: 5,
                         effect: 2,
                         nomodel: false
