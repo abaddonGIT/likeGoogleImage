@@ -28,8 +28,11 @@
                             this.makeNicely(rows);
                             var ln = rows.length;
                             if (ln >= 2) {
-                                this.makeLastNicely(rows[ln - 1], rows[ln - 2]);
+                                var lastRows = this.makeLastNicely(rows[ln - 1], rows[ln - 2]);
+                                rows[ln - 1] = lastRows[1];
+                                rows[ln - 2] = lastRows[0];
                             }
+                            this.correction(rows);
                         };
                     };
                     Good.prototype = {
@@ -57,6 +60,7 @@
                             var rows = [];
                             rows.push(one, two);
                             this.makeNicely(rows, 1);
+                            return rows;
                         },
                         getRowWidth: function (collection, item) {
                             var config = this.config;
@@ -152,26 +156,31 @@
                                 item.parent.style.cssText += $likeGoogle.getEffect("end", "opacity");
                             }
                         },
-                        correction: function (row) {
-                            var stock = this.config.blockWidth - row.width;
-                            if (stock > 0) {
-                                var ln = row.items.length, step = Math.ceil(stock / ln), j = ln - 1;
-                                for (var i = stock; i >= step; i = i - step) {
-                                    var item = row.items[j];
-                                    row.width += step;
-                                    item.width += step;
-                                    item.height += step;
-                                    item['source'][0].width = row.items[j].width;
-                                    item['source'][0].height = row.items[j].height;
-                                    j--;
+                        correction: function (rows) {
+                            var bWidth = this.config['blockWidth'];
+                            an.forEach(rows, function (row, k) {
+                                var stock = bWidth - row.width;
+                                if (stock > 0) {
+                                    var ln = row.items.length,
+                                        index = ln - 1;
+                                    var step = Math.ceil(stock / ln);
+                                    while (ln--) {
+                                        row['width'] += step;
+                                        var item = row.items[ln];
+                                        item.width += step;
+                                        item.height += step;
+                                        item['source'][0].width = item.width;
+                                        item['source'][0].height = item.height;
+                                    }
+                                    if (row['width'] > bWidth) {
+                                        var different = row['width'] - bWidth;
+                                        row['width'] -= different;
+                                        var first = row.items[0];
+                                        first.width -= different;
+                                        first['source'][0].width = first.width;
+                                    }
                                 }
-                                stock = this.config.blockWidth - row.width;
-                                row.items[0].width += stock;
-                                row.items[0].height += stock;
-                                row.width += stock;
-                                row.items[0]['source'][0].width = row.items[0].width;
-                                row.items[0]['source'][0].height = row.items[0].height;
-                            }
+                            });
                         },
                         makeNicely: function (rows, flag) {//Делает красиво
                             var config = this.config , cof
@@ -181,9 +190,6 @@
                                     row.compress_ratio = cof = (config.blockWidth - marginWidth) / row.width;
                                 }
                                 this.createView(row, marginWidth);
-                                if (!row.last || flag) {//Кориктеровка
-                                    this.correction(row);
-                                }
                                 this.show(row);
                             }.bind(this));
                         }
