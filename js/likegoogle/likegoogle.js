@@ -183,11 +183,11 @@
                             });
                         },
                         makeNicely: function (rows, flag) {//Делает красиво
-                            var config = this.config , cof
+                            var config = this.config;
                             an.forEach(rows, function (row) {
                                 var marginWidth = (row.items.length - 1) * config.margin;
                                 if (!row.last || flag) {
-                                    row.compress_ratio = cof = (config.blockWidth - marginWidth) / row.width;
+                                    row.compress_ratio = (config.blockWidth - marginWidth) / row.width;
                                 }
                                 this.createView(row, marginWidth);
                                 this.show(row);
@@ -334,8 +334,8 @@
                     };
                 res = {
                     startStyle: 'opacity: 0;',
-                    endStyle: 'opacity: 1;' + _common(random(1, 5)),
-                    removeStyle: '-webkit-transform: scale(0.1);'
+                    endStyle: 'opacity: 1; -webkit-transform: scale(1); -o-transform: scale(1); -moz-transform: scale(1); -ms-transform: scale(1); transform: scale(1);' + _common(random(1, 5)),
+                    removeStyle: '-webkit-transform: scale(0.1); -o-transform: scale(0.1); -moz-transform: scale(0.1); -ms-transform: scale(0.1); transform: scale(0.1);'
                 };
                 switch (phase) {
                     case 'start':
