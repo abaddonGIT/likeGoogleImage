@@ -31,8 +31,8 @@
                                 var lastRows = this.makeLastNicely(rows[ln - 1], rows[ln - 2]);
                                 rows[ln - 1] = lastRows[1];
                                 rows[ln - 2] = lastRows[0];
+                                this.correction(rows);
                             }
-                            this.correction(rows);
                         };
                     };
                     Good.prototype = {
