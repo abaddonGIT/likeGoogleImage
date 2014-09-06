@@ -226,6 +226,7 @@
                             delElem.style.cssText += $likeGoogle.getEffect('remove');
                             $timeout(function () {
                                 model.splice(delIndex, 1);
+                                controller.good.items.splice(delIndex, 1);
                                 controller.good.run();
                             }, 500);
                         }
