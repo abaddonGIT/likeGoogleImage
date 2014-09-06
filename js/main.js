@@ -90,15 +90,23 @@ app.controller("baseController", ['$scope', '$document', function ($scope, $docu
 
     $scope.images2 = [
         {
-            src: 'img/1.jpg'
+            src: 'img/2.jpg'
         },
         {
-            src: 'img/2.jpg'
+            src: 'img/20.jpg'
         }
         ,
         {
-            src: 'img/3.jpg'
+            src: 'img/22.jpg'
         }
+//        ,
+//        {
+//            src: 'img/2.jpg'
+//        }
+//        ,
+//        {
+//            src: 'img/3.jpg'
+//        }
     ];
 
     $scope.images = images;
