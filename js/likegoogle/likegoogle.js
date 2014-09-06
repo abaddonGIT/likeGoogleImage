@@ -32,6 +32,14 @@
                                 rows[ln - 1] = lastRows[1];
                                 rows[ln - 2] = lastRows[0];
                                 this.correction(rows);
+                            } else {
+                                var last = rows[0], half = this.config.blockWidth / 2;
+                                if (last['width'] > half) {
+                                    var marginWidth = (last.items.length - 1) * this.config.margin;
+                                    last.compress_ratio = (this.config.blockWidth - marginWidth) / last.width;
+                                    this.createView(last, marginWidth);
+                                    this.correction(rows);
+                                }
                             }
                         };
                     };

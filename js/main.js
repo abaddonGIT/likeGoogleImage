@@ -87,10 +87,24 @@ app.controller("baseController", ['$scope', '$document', function ($scope, $docu
             src: 'img/22.jpg'
         }
     ];
+
+    $scope.images2 = [
+        {
+            src: 'img/1.jpg'
+        },
+        {
+            src: 'img/2.jpg'
+        }
+        ,
+        {
+            src: 'img/3.jpg'
+        }
+    ];
+
     $scope.images = images;
     $scope.addToModel = function () {
         var r = random(1, 22);
-        $scope.methods.add({'src':'img/' + r + '.jpg'});
+        $scope.methods.add({'src': 'img/' + r + '.jpg'});
     };
 } ]);
 
