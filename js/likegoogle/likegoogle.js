@@ -6,6 +6,7 @@
  * Time: 01:22
  * Description: Resizing and output images like Google Images
  */
+/*gloabal angular, window, document*/
 (function (w, d, an) {
     "use strict";
     var likegoogle = an.module("likegoogle", [])
